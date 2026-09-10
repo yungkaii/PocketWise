@@ -1,0 +1,260 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * PocketWise design system — "paper ledger" fintech.
+ * All colors are oklch tokens. Never hardcode colors in components.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+
+  /* Brand-specific tokens */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-deep: var(--brand-deep);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-3: var(--paper-3);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --shadow-cut: 6px 8px 0 var(--cut-shadow-color);
+  --shadow-cut-sm: 3px 4px 0 var(--cut-shadow-color);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  --ink: oklch(0.227 0.004 286.1);
+  --paper: oklch(0.958 0.011 89.7);
+  --paper-2: oklch(0.923 0.021 88.7);
+  --paper-3: oklch(0.883 0.028 88.8);
+  --cream: oklch(0.982 0.008 91.5);
+  --brand: oklch(0.497 0.212 264.4);
+  --brand-deep: oklch(0.42 0.182 265);
+  --brand-foreground: oklch(0.982 0.008 91.5);
+  --success: oklch(0.625 0.125 153.5);
+  --warning: oklch(0.751 0.142 77.3);
+  --danger: oklch(0.603 0.183 28.8);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--cream);
+  --card-foreground: var(--ink);
+  --popover: var(--cream);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: var(--cream);
+  --secondary: var(--paper-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-2);
+  --muted-foreground: oklch(0.52 0.012 88);
+  --accent: oklch(0.771 0.147 67);
+  --accent-foreground: var(--ink);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--cream);
+  --border: oklch(0.227 0.004 286.1 / 12%);
+  --input: oklch(0.227 0.004 286.1 / 16%);
+  --ring: var(--brand);
+  --cut-shadow-color: oklch(0.227 0.004 286.1 / 14%);
+
+  --chart-1: var(--brand);
+  --chart-2: oklch(0.771 0.147 67);
+  --chart-3: var(--success);
+  --chart-4: var(--danger);
+  --chart-5: var(--warning);
+  --chart-6: oklch(0.42 0.182 265);
+  --chart-7: oklch(0.6 0.02 88);
+
+  --sidebar: var(--cream);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--cream);
+  --sidebar-accent: var(--paper-2);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: oklch(0.227 0.004 286.1 / 12%);
+  --sidebar-ring: var(--brand);
+}
+
+.dark {
+  --ink: oklch(0.17 0.006 286);
+  --paper: oklch(0.19 0.006 286);
+  --paper-2: oklch(0.25 0.008 286);
+  --paper-3: oklch(0.31 0.01 286);
+  --cream: oklch(0.235 0.007 286);
+  --brand: oklch(0.63 0.185 264.4);
+  --brand-deep: oklch(0.5 0.19 265);
+  --brand-foreground: oklch(0.97 0.005 286);
+  --success: oklch(0.7 0.13 153.5);
+  --warning: oklch(0.8 0.14 77.3);
+  --danger: oklch(0.68 0.18 28.8);
+
+  --background: var(--paper);
+  --foreground: oklch(0.95 0.008 90);
+  --card: var(--cream);
+  --card-foreground: oklch(0.95 0.008 90);
+  --popover: var(--cream);
+  --popover-foreground: oklch(0.95 0.008 90);
+  --primary: var(--brand);
+  --primary-foreground: oklch(0.97 0.005 286);
+  --secondary: var(--paper-2);
+  --secondary-foreground: oklch(0.95 0.008 90);
+  --muted: var(--paper-2);
+  --muted-foreground: oklch(0.7 0.01 90);
+  --accent: oklch(0.771 0.147 67);
+  --accent-foreground: oklch(0.17 0.006 286);
+  --destructive: var(--danger);
+  --destructive-foreground: oklch(0.97 0.005 286);
+  --border: oklch(0.95 0.008 90 / 14%);
+  --input: oklch(0.95 0.008 90 / 18%);
+  --ring: var(--brand);
+  --cut-shadow-color: oklch(0.08 0.004 286 / 55%);
+
+  --sidebar: var(--cream);
+  --sidebar-foreground: oklch(0.95 0.008 90);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: oklch(0.97 0.005 286);
+  --sidebar-accent: var(--paper-2);
+  --sidebar-accent-foreground: oklch(0.95 0.008 90);
+  --sidebar-border: oklch(0.95 0.008 90 / 14%);
+  --sidebar-ring: var(--brand);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* Paper texture overlay — subtle grain that gives the ledger feel. */
+@utility grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  z-index: 50;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.dark .grain {
+  mix-blend-mode: screen;
+  opacity: 0.035;
+}
+
+/* Washi-tape accent used on paper panels. */
+@utility tape {
+  position: absolute;
+  width: 74px;
+  height: 24px;
+  background: var(--color-accent);
+  opacity: 0.55;
+  box-shadow: 0 1px 2px oklch(0 0 0 / 12%);
+  mix-blend-mode: multiply;
+}
+
+.dark .tape {
+  mix-blend-mode: screen;
+  opacity: 0.4;
+}
+
+/* Torn paper edges. */
+@utility torn {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 84%,
+    93% 90%,
+    82% 85%,
+    69% 92%,
+    55% 86%,
+    41% 93%,
+    27% 87%,
+    14% 92%,
+    0 85%
+  );
+}
+
+@utility torn-top {
+  clip-path: polygon(
+    0 0,
+    0 100%,
+    6% 92%,
+    18% 98%,
+    31% 90%,
+    45% 97%,
+    58% 91%,
+    72% 98%,
+    86% 90%,
+    100% 96%,
+    100% 0
+  );
+}
