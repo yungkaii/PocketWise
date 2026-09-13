@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { PaperPanel, PanelHeading } from "@/components/common/PaperPanel";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { Badge } from "@/components/ui/badge";
-import { mockProfile } from "@/data/mock-data";
+import { supabase } from "@/lib/supabase";
 import { store } from "@/services/mock-store";
 
 export const Route = createFileRoute("/settings")({
@@ -22,6 +22,34 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { balanceHidden, toggleBalance } = usePreferences();
+  const [profile, setProfile] = useState({ fullname: "-", email: "-" });
+
+  useEffect(() => {
+    async function fetchProfile() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("fullname")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Gagal mengambil data profile:", error.message);
+      }
+
+      setProfile({
+        fullname: data?.fullname || "-",
+        email: user.email || "-",
+      });
+    }
+
+    fetchProfile();
+  }, []);
 
   const totalBalance = store.accounts.reduce((sum, account) => sum + account.balance, 0);
 
@@ -42,13 +70,13 @@ function SettingsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Full Name</p>
-                <p className="mt-1 font-medium">{mockProfile.name}</p>
+                <p className="mt-1 font-medium">{profile.fullname}</p>
               </div>
-              <Badge variant="outline">{mockProfile.plan}</Badge>
+              <Badge variant="outline">Personal</Badge>
             </div>
             <div className="border-t border-border pt-4">
               <p className="text-sm text-muted-foreground">Email Address</p>
-              <p className="mt-1 font-mono text-sm">{mockProfile.email}</p>
+              <p className="mt-1 font-mono text-sm">{profile.email}</p>
             </div>
           </div>
         </PaperPanel>

@@ -6,8 +6,8 @@ import { PaperPanel, PanelHeading } from "@/components/common/PaperPanel";
 import { BUDGET_STATUS_LABEL } from "@/constants/finance";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { budgetService } from "@/services/budgetService";
-import { store } from "@/services/mock-store";
-import type { BudgetProgress } from "@/types/finance";
+import { referenceService } from "@/services/referenceService";
+import type { Account, BudgetProgress } from "@/types/finance";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/budgets")({
@@ -22,13 +22,19 @@ export const Route = createFileRoute("/budgets")({
 
 function BudgetsPage() {
   const [budgets, setBudgets] = useState<BudgetProgress[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    void budgetService
-      .getBudgets(new Date().getMonth() + 1, new Date().getFullYear())
-      .then(setBudgets)
+    Promise.all([
+      budgetService.getBudgets(new Date().getMonth() + 1, new Date().getFullYear()),
+      referenceService.getAccounts(),
+    ])
+      .then(([budgetData, accs]) => {
+        setBudgets(budgetData);
+        setAccounts(accs);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -40,7 +46,7 @@ function BudgetsPage() {
     return { totalLimit, totalSpent, totalRemaining };
   }, [budgets]);
 
-  const totalBalance = store.accounts.reduce((sum, account) => sum + account.balance, 0);
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
   return (
     <DashboardLayout totalBalance={totalBalance}>
@@ -125,4 +131,4 @@ function BudgetsPage() {
       </div>
     </DashboardLayout>
   );
-}
+} 

@@ -5,9 +5,9 @@ import { Amount } from "@/components/common/Amount";
 import { DynamicIcon } from "@/components/common/DynamicIcon";
 import { PaperPanel, PanelHeading } from "@/components/common/PaperPanel";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import { categoryService } from "@/services/categoryService";
-import { store } from "@/services/mock-store";
-import type { Category } from "@/types/finance";
+import { referenceService } from "@/services/referenceService";
+import { transactionService } from "@/services/transactionService";
+import type { Account, Category, Transaction } from "@/types/finance";
 
 export const Route = createFileRoute("/categories")({
   component: CategoriesPage,
@@ -21,13 +21,22 @@ export const Route = createFileRoute("/categories")({
 
 function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    void categoryService
-      .getCategories()
-      .then(setCategories)
+    Promise.all([
+      referenceService.getCategories(),
+      referenceService.getAccounts(),
+      transactionService.getTransactions({ pageSize: 1000 }),
+    ])
+      .then(([cats, accs, txResult]) => {
+        setCategories(cats);
+        setAccounts(accs);
+        setTransactions(txResult.items);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -38,7 +47,7 @@ function CategoriesPage() {
     };
 
     for (const category of categories) {
-      const total = store.transactions
+      const total = transactions
         .filter((transaction) => transaction.categoryId === category.id)
         .reduce((sum, transaction) => sum + transaction.amount, 0);
 
@@ -54,9 +63,9 @@ function CategoriesPage() {
       income: data.income.sort((a, b) => b.total - a.total),
       expense: data.expense.sort((a, b) => b.total - a.total),
     };
-  }, [categories]);
+  }, [categories, transactions]);
 
-  const totalBalance = store.accounts.reduce((sum, account) => sum + account.balance, 0);
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
   return (
     <DashboardLayout totalBalance={totalBalance}>

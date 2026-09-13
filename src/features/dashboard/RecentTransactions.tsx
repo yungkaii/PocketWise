@@ -36,7 +36,7 @@ export function RecentTransactions({
         const isIncome = trx.type === "income";
 
         return (
-          <li key={trx.id} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-secondary">
+          <li key={trx.id} className="flex items-center gap-3 px-3 py-3 transition-colors hover:bg-secondary sm:px-5">
             <span
               className={cn(
                 "grid size-9 shrink-0 place-items-center rounded-md",
@@ -47,7 +47,7 @@ export function RecentTransactions({
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{trx.note}</p>
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
                 {category?.name} · {account?.name} · {formatDate(trx.date, { year: undefined })}
               </p>
             </div>
@@ -56,7 +56,7 @@ export function RecentTransactions({
               signed
               privacy
               className={cn(
-                "shrink-0 font-display text-sm font-bold",
+                "shrink-0 font-display text-xs font-bold sm:text-sm",
                 isIncome ? "text-success" : "text-danger",
               )}
             />

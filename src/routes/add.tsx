@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { PaperPanel, PanelHeading } from "@/components/common/PaperPanel";
@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { DynamicIcon } from "@/components/common/DynamicIcon";
 import { transactionService } from "@/services/transactionService";
-import { store } from "@/services/mock-store";
-import type { TransactionType } from "@/types/finance";
+import { referenceService } from "@/services/referenceService";
+import type { Account, Category, TransactionType } from "@/types/finance";
 
 export const Route = createFileRoute("/add")({
   component: AddTransactionPage,
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/add")({
 function AddTransactionPage() {
   const navigate = useNavigate();
   const defaultDate = new Date().toISOString().split("T")[0] ?? new Date().toISOString().substring(0, 10);
+
   const [type, setType] = useState<TransactionType>("expense");
   const [categoryId, setCategoryId] = useState("");
   const [accountId, setAccountId] = useState("");
@@ -37,17 +38,27 @@ function AddTransactionPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const totalBalance = store.accounts.reduce((sum, account) => sum + account.balance, 0);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
-  // Filter categories by type
-  const categories = store.categories.filter((c) => c.type === type);
-  const accounts = store.accounts;
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
+  const categories = allCategories.filter((c) => c.type === type);
+
+  useEffect(() => {
+    Promise.all([referenceService.getAccounts(), referenceService.getCategories()])
+      .then(([accs, cats]) => {
+        setAccounts(accs);
+        setAllCategories(cats);
+      })
+      .catch((err) => setError(err.message ?? "Gagal memuat data."))
+      .finally(() => setLoadingData(false));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Validate
     if (!categoryId) {
       setError("Please select a category");
       return;
@@ -72,13 +83,12 @@ function AddTransactionPage() {
         type,
         categoryId,
         accountId,
-        amount: Math.round(Number(amount)),
+        amount: Math.round(numAmount),
         date,
         time,
         note,
       });
 
-      // Redirect to transactions page
       await navigate({ to: "/transactions" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create transaction");
@@ -130,9 +140,9 @@ function AddTransactionPage() {
               <Label htmlFor="category" className="text-sm font-medium">
                 Category
               </Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
+              <Select value={categoryId} onValueChange={setCategoryId} disabled={loadingData}>
                 <SelectTrigger id="category" className="mt-2">
-                  <SelectValue placeholder="Select a category" />
+                  <SelectValue placeholder={loadingData ? "Loading..." : "Select a category"} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -167,9 +177,9 @@ function AddTransactionPage() {
               <Label htmlFor="account" className="text-sm font-medium">
                 Account
               </Label>
-              <Select value={accountId} onValueChange={setAccountId}>
+              <Select value={accountId} onValueChange={setAccountId} disabled={loadingData}>
                 <SelectTrigger id="account" className="mt-2">
-                  <SelectValue placeholder="Select an account" />
+                  <SelectValue placeholder={loadingData ? "Loading..." : "Select an account"} />
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.map((acc) => (
@@ -237,7 +247,7 @@ function AddTransactionPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading} className="flex-1">
+              <Button type="submit" disabled={loading || loadingData} className="flex-1">
                 {loading ? "Saving..." : "Add Transaction"}
               </Button>
             </div>

@@ -1,17 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { MoreHorizontal, Plus } from "lucide-react";
-import { MOBILE_NAV_ITEMS, NAV_ITEMS } from "@/constants/navigation";
+import { Plus, UserRound } from "lucide-react";
+import { MOBILE_NAV_ITEMS } from "@/constants/navigation";
 import { DynamicIcon } from "@/components/common/DynamicIcon";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-const MORE_ITEMS = NAV_ITEMS.filter(
-  (item) => !MOBILE_NAV_ITEMS.some((m) => m.to === item.to),
-);
 
 /** Mobile bottom navigation with a raised quick-add action. */
 export function MobileNav({ onAdd }: { onAdd?: (() => void) | undefined }) {
@@ -34,22 +24,16 @@ export function MobileNav({ onAdd }: { onAdd?: (() => void) | undefined }) {
           <NavButton key={item.to} to={item.to} label={item.label} icon={item.icon} />
         ))}
 
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex flex-col items-center gap-1 px-2 text-[11px] text-muted-foreground">
-            <MoreHorizontal className="size-5" />
-            More
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="mb-2 w-44">
-            {MORE_ITEMS.map((item) => (
-              <DropdownMenuItem key={item.to} asChild>
-                <Link to={item.to}>
-                  <DynamicIcon name={item.icon} className="size-4" />
-                  {item.label}
-                </Link>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Link
+          to="/settings"
+          activeOptions={{ exact: false }}
+          activeProps={{ className: "text-brand font-semibold" }}
+          inactiveProps={{ className: "text-muted-foreground" }}
+          className="flex flex-col items-center gap-1 px-2 text-[11px]"
+        >
+          <UserRound className="size-5" />
+          Profil User
+        </Link>
       </div>
     </nav>
   );

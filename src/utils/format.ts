@@ -9,8 +9,10 @@ export function formatCurrency(value: number, options?: { signed?: boolean }) {
     maximumFractionDigits: 0,
   }).format(Math.abs(value));
 
-  if (!options?.signed) return formatted;
-  return `${value < 0 ? "−" : "+"}${formatted}`;
+  const compacted = formatted.replace(/\s+/g, "");
+
+  if (!options?.signed) return compacted;
+  return `${value < 0 ? "−" : "+"}${compacted}`;
 }
 
 /** Rp 5,8 jt — compact form used inside charts and tight cards. */

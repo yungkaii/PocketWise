@@ -16,7 +16,7 @@ export function ExpenseDonutChart({ data }: { data: CategorySpend[] }) {
   const total = data.reduce((s, d) => s + d.total, 0);
 
   return (
-    <div className="flex flex-col items-center gap-5 sm:flex-row">
+    <div className="flex w-full max-w-full flex-col items-center gap-5 sm:flex-row sm:items-center">
       <div className="relative h-40 w-40 shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -53,14 +53,14 @@ export function ExpenseDonutChart({ data }: { data: CategorySpend[] }) {
         </div>
       </div>
 
-      <ul className="w-full space-y-1.5 text-xs font-medium">
+      <ul className="w-full max-w-full space-y-1.5 text-xs font-medium sm:max-w-[220px]">
         {data.slice(0, 7).map((item, index) => (
-          <li key={item.categoryId} className="flex items-center gap-2">
+          <li key={item.categoryId} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
             <span
               className="size-2.5 shrink-0 rounded-sm"
               style={{ background: colorFor(item, index) }}
             />
-            <span className="min-w-0 flex-1 truncate">{item.name}</span>
+            <span className="min-w-0 truncate">{item.name}</span>
             <span className="tabular-nums text-muted-foreground">
               {item.percentage.toFixed(0)}%
             </span>

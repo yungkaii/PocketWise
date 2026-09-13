@@ -8,12 +8,12 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: "LayoutDashboard" },
   { to: "/transactions", label: "Transactions", icon: "ArrowLeftRight" },
-  { to: "/accounts", label: "Accounts", icon: "Wallet" },
   { to: "/categories", label: "Categories", icon: "Tags" },
   { to: "/budgets", label: "Budgets", icon: "Target" },
   { to: "/analytics", label: "Analytics", icon: "ChartLine" },
   { to: "/reports", label: "Reports", icon: "FileText" },
   { to: "/settings", label: "Settings", icon: "Settings" },
+  { to: "/login", label: "Logout", icon: "LogOut" },
 ];
 
 /** Mobile bottom navigation: Dashboard, Transactions, Add, Budgets, More. */

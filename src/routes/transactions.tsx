@@ -5,9 +5,9 @@ import { Amount } from "@/components/common/Amount";
 import { DynamicIcon } from "@/components/common/DynamicIcon";
 import { PaperPanel, PanelHeading } from "@/components/common/PaperPanel";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import { store } from "@/services/mock-store";
+import { referenceService } from "@/services/referenceService";
 import { transactionService } from "@/services/transactionService";
-import type { Transaction } from "@/types/finance";
+import type { Account, Category, Transaction } from "@/types/finance";
 import { formatDate } from "@/utils/format";
 
 const FILTERS = [
@@ -29,8 +29,21 @@ export const Route = createFileRoute("/transactions")({
 function TransactionsPage() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Ambil daftar categories & accounts sekali saja
+  useEffect(() => {
+    Promise.all([referenceService.getCategories(), referenceService.getAccounts()]).then(
+      ([cats, accs]) => {
+        setCategories(cats);
+        setAccounts(accs);
+      },
+    );
+  }, []);
+
+  // Ambil transaksi setiap kali filter berubah
   useEffect(() => {
     setLoading(true);
     void transactionService
@@ -52,7 +65,7 @@ function TransactionsPage() {
     return { income, expense, net: income - expense };
   }, [transactions]);
 
-  const totalBalance = store.accounts.reduce((sum, account) => sum + account.balance, 0);
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
   return (
     <DashboardLayout totalBalance={totalBalance}>
@@ -112,8 +125,8 @@ function TransactionsPage() {
                 </thead>
                 <tbody>
                   {transactions.map((item) => {
-                    const category = store.categories.find((entry) => entry.id === item.categoryId);
-                    const account = store.accounts.find((entry) => entry.id === item.accountId);
+                    const category = categories.find((entry) => entry.id === item.categoryId);
+                    const account = accounts.find((entry) => entry.id === item.accountId);
                     const isIncome = item.type === "income";
 
                     return (

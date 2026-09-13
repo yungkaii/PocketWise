@@ -1,90 +1,131 @@
-/** Transaction service — mock implementation with a query surface that mirrors REST. */
-import { delay, makeId, store } from "./mock-store";
-import type { Paginated, Transaction, TransactionQuery } from "@/types/finance";
+/** Transaction service backed by Supabase. */
+import { supabase } from "@/lib/supabase";
+import type { Paginated, Transaction, TransactionQuery, TransactionType } from "@/types/finance";
 
-export type TransactionInput = Omit<Transaction, "id">;
-
-function categoryName(id: string) {
-  return store.categories.find((c) => c.id === id)?.name ?? "";
+export interface CreateTransactionInput {
+  type: TransactionType;
+  categoryId: string;
+  accountId: string;
+  amount: number;
+  date: string;
+  time: string;
+  note: string;
 }
 
-function accountName(id: string) {
-  return store.accounts.find((a) => a.id === id)?.name ?? "";
-}
-
-function applyQuery(list: Transaction[], query: TransactionQuery) {
-  const {
-    search = "",
-    type = "all",
-    categoryId = "all",
-    accountId = "all",
-    from,
-    to,
-    sortBy = "date",
-    sortDir = "desc",
-  } = query;
-
-  const term = search.trim().toLowerCase();
-
-  let result = list.filter((t) => {
-    if (type !== "all" && t.type !== type) return false;
-    if (categoryId !== "all" && t.categoryId !== categoryId) return false;
-    if (accountId !== "all" && t.accountId !== accountId) return false;
-    if (from && t.date < from) return false;
-    if (to && t.date > to) return false;
-    if (term) {
-      const haystack =
-        `${t.note} ${categoryName(t.categoryId)} ${accountName(t.accountId)}`.toLowerCase();
-      if (!haystack.includes(term)) return false;
-    }
-    return true;
-  });
-
-  result = result.sort((a, b) => {
-    const dir = sortDir === "asc" ? 1 : -1;
-    if (sortBy === "amount") return (a.amount - b.amount) * dir;
-    return `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`) * dir;
-  });
-
-  return result;
+function mapTransaction(row: any): Transaction {
+  return {
+    id: row.id,
+    type: row.type,
+    amount: Number(row.amount),
+    categoryId: row.category_id,
+    accountId: row.account_id,
+    date: row.transaction_date,
+    time: row.time ?? "00:00",
+    note: row.note ?? "",
+  };
 }
 
 export const transactionService = {
+  async createTransaction(input: CreateTransactionInput): Promise<Transaction> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Tidak ada user yang login.");
+
+    // 1. Simpan transaksi baru
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert({
+        user_id: user.id,
+        type: input.type,
+        category_id: input.categoryId,
+        account_id: input.accountId,
+        amount: input.amount,
+        transaction_date: input.date,
+        time: input.time,
+        note: input.note,
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    // 2. Update saldo akun terkait (tambah kalau income, kurangi kalau expense)
+    const { data: account, error: accErr } = await supabase
+      .from("accounts")
+      .select("balance")
+      .eq("id", input.accountId)
+      .single();
+
+    if (accErr) throw new Error(accErr.message);
+
+    const delta = input.type === "income" ? input.amount : -input.amount;
+    const newBalance = Number(account.balance) + delta;
+
+    const { error: updateErr } = await supabase
+      .from("accounts")
+      .update({ balance: newBalance })
+      .eq("id", input.accountId);
+
+    if (updateErr) throw new Error(updateErr.message);
+
+    return mapTransaction(data);
+  },
+
   async getTransactions(query: TransactionQuery = {}): Promise<Paginated<Transaction>> {
-    const filtered = applyQuery(store.transactions, query);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { items: [], total: 0, page: query.page ?? 1, pageSize: query.pageSize ?? 30 };
+    }
+
+    let request = supabase
+      .from("transactions")
+      .select("*", { count: "exact" })
+      .eq("user_id", user.id);
+
+    if (query.type && query.type !== "all") {
+      request = request.eq("type", query.type);
+    }
+    if (query.categoryId && query.categoryId !== "all") {
+      request = request.eq("category_id", query.categoryId);
+    }
+    if (query.accountId && query.accountId !== "all") {
+      request = request.eq("account_id", query.accountId);
+    }
+    if (query.from) {
+      request = request.gte("transaction_date", query.from);
+    }
+    if (query.to) {
+      request = request.lte("transaction_date", query.to);
+    }
+
+    const sortBy = query.sortBy === "amount" ? "amount" : "transaction_date";
+    const ascending = query.sortDir === "asc";
+    request = request.order(sortBy, { ascending });
+
     const page = query.page ?? 1;
-    const pageSize = query.pageSize ?? 10;
-    const start = (page - 1) * pageSize;
-    return delay({
-      items: filtered.slice(start, start + pageSize),
-      total: filtered.length,
+    const pageSize = query.pageSize ?? 30;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    request = request.range(from, to);
+
+    const { data, error, count } = await request;
+    if (error) throw new Error(error.message);
+
+    return {
+      items: (data ?? []).map(mapTransaction),
+      total: count ?? 0,
       page,
       pageSize,
-    });
-  },
-
-  /** Unpaginated read used by dashboard/analytics aggregation. */
-  async getAllTransactions(query: TransactionQuery = {}): Promise<Transaction[]> {
-    return delay(applyQuery(store.transactions, query));
-  },
-
-  async getTransaction(id: string): Promise<Transaction | undefined> {
-    return delay(store.transactions.find((t) => t.id === id));
-  },
-
-  async createTransaction(input: TransactionInput): Promise<Transaction> {
-    const transaction: Transaction = { ...input, id: makeId("trx") };
-    store.transactions = [transaction, ...store.transactions];
-    return delay(transaction);
-  },
-
-  async updateTransaction(id: string, input: Partial<TransactionInput>): Promise<Transaction> {
-    store.transactions = store.transactions.map((t) => (t.id === id ? { ...t, ...input } : t));
-    return delay(store.transactions.find((t) => t.id === id)!);
+    };
   },
 
   async deleteTransaction(id: string): Promise<void> {
-    store.transactions = store.transactions.filter((t) => t.id !== id);
-    return delay(undefined);
+    const { error } = await supabase.from("transactions").delete().eq("id", id);
+    if (error) throw new Error(error.message);
   },
 };

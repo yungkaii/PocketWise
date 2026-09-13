@@ -18,8 +18,12 @@ export function Topbar({ totalBalance, onAdd }: { totalBalance: number; onAdd?: 
     onAdd?.();
   };
 
+  const handleProfile = () => {
+    void navigate({ to: "/settings" });
+  };
+
   return (
-    <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-5">
+    <header className="sticky top-0 z-40 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-background/95 py-5 backdrop-blur-sm lg:static lg:bg-transparent lg:backdrop-blur-none">
       <div className="flex min-w-0 items-center gap-3">
         {/* Tablet/mobile drawer trigger */}
         <Sheet open={open} onOpenChange={setOpen}>
@@ -64,13 +68,18 @@ export function Topbar({ totalBalance, onAdd }: { totalBalance: number; onAdd?: 
         <ThemeToggle />
         <button
           onClick={handleAdd}
-          className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background shadow-cut-sm transition-transform hover:-translate-y-0.5"
+          className="hidden items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background shadow-cut-sm transition-transform hover:-translate-y-0.5 sm:inline-flex"
         >
           <Plus className="size-4" /> Add
         </button>
-        <span className="ml-1 hidden size-9 place-items-center rounded-full bg-paper-3 text-sm font-bold outline-2 outline-border sm:grid">
+        <button
+          type="button"
+          onClick={handleProfile}
+          aria-label="Open profile"
+          className="ml-1 hidden size-9 place-items-center rounded-full bg-paper-3 text-sm font-bold outline-2 outline-border transition-colors hover:bg-secondary sm:grid"
+        >
           {mockProfile.initials}
-        </span>
+        </button>
       </div>
     </header>
   );

@@ -6,7 +6,9 @@ import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
 import { Amount } from "@/components/common/Amount";
 import { PaperPanel, PanelHeading } from "@/components/common/PaperPanel";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import { store } from "@/services/mock-store";
+import { referenceService } from "@/services/referenceService";
+import { transactionService } from "@/services/transactionService";
+import type { Account, Category, Transaction } from "@/types/finance";
 
 export const Route = createFileRoute("/analytics")({
   component: AnalyticsPage,
@@ -20,18 +22,30 @@ export const Route = createFileRoute("/analytics")({
 
 function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(timer);
+    setLoading(true);
+    Promise.all([
+      transactionService.getTransactions({ pageSize: 1000 }),
+      referenceService.getCategories(),
+      referenceService.getAccounts(),
+    ])
+      .then(([txResult, cats, accs]) => {
+        setTransactions(txResult.items);
+        setCategories(cats);
+        setAccounts(accs);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const analytics = useMemo(() => {
     const monthly: Record<string, { income: number; expense: number }> = {};
     const categoryExpense: Record<string, { categoryId: string; name: string; color: string; total: number }> = {};
 
-    // Build monthly trends and category breakdown
-    for (const tx of store.transactions) {
+    for (const tx of transactions) {
       const [year, month] = tx.date.split("-");
       const yearMonth = `${year}-${month}`;
 
@@ -43,7 +57,7 @@ function AnalyticsPage() {
         monthly[yearMonth].income += tx.amount;
       } else {
         monthly[yearMonth].expense += tx.amount;
-        const category = store.categories.find((c) => c.id === tx.categoryId);
+        const category = categories.find((c) => c.id === tx.categoryId);
         if (category && !categoryExpense[category.id]) {
           categoryExpense[category.id] = {
             categoryId: category.id,
@@ -61,11 +75,9 @@ function AnalyticsPage() {
       }
     }
 
-    // Calculate totals
-    const totalIncome = store.transactions.filter((tx) => tx.type === "income").reduce((sum, tx) => sum + tx.amount, 0);
-    const totalExpense = store.transactions.filter((tx) => tx.type === "expense").reduce((sum, tx) => sum + tx.amount, 0);
+    const totalIncome = transactions.filter((tx) => tx.type === "income").reduce((sum, tx) => sum + tx.amount, 0);
+    const totalExpense = transactions.filter((tx) => tx.type === "expense").reduce((sum, tx) => sum + tx.amount, 0);
 
-    // Sort monthly data by year-month
     const sortedMonthly = Object.entries(monthly)
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([month, data]) => ({
@@ -74,7 +86,6 @@ function AnalyticsPage() {
         expense: data.expense,
       }));
 
-    // Sort category expenses and calculate percentages
     const sortedCategories = Object.values(categoryExpense)
       .sort((a, b) => b.total - a.total)
       .slice(0, 6)
@@ -90,9 +101,9 @@ function AnalyticsPage() {
       monthlyTrends: sortedMonthly,
       categoryBreakdown: sortedCategories,
     };
-  }, []);
+  }, [transactions, categories]);
 
-  const totalBalance = store.accounts.reduce((sum, account) => sum + account.balance, 0);
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
   return (
     <DashboardLayout totalBalance={totalBalance}>

@@ -17,7 +17,7 @@ export function Amount({ value, signed, privacy, className }: AmountProps) {
   const formatOptions = signed ? { signed: true } : undefined;
 
   return (
-    <span className={cn("tabular-nums", className)}>
+    <span className={cn("tabular-nums whitespace-nowrap", className)}>
       {masked ? "Rp ••••••" : formatCurrency(value, formatOptions)}
     </span>
   );

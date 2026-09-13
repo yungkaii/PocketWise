@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Amount } from "@/components/common/Amount";
 import { PaperPanel, PanelHeading } from "@/components/common/PaperPanel";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import { store } from "@/services/mock-store";
+import { referenceService } from "@/services/referenceService";
+import { transactionService } from "@/services/transactionService";
+import type { Account, Transaction } from "@/types/finance";
 
 export const Route = createFileRoute("/reports")({
   component: ReportsPage,
@@ -17,7 +19,22 @@ export const Route = createFileRoute("/reports")({
 });
 
 function ReportsPage() {
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      transactionService.getTransactions({ pageSize: 1000 }),
+      referenceService.getAccounts(),
+    ])
+      .then(([txResult, accs]) => {
+        setTransactions(txResult.items);
+        setAccounts(accs);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const monthlyReports = useMemo(() => {
     const reports: Array<{
@@ -34,8 +51,7 @@ function ReportsPage() {
       { income: number; expense: number; transactionCount: number }
     > = {};
 
-    // Group transactions by month
-    for (const tx of store.transactions) {
+    for (const tx of transactions) {
       const [year, month] = tx.date.split("-");
       const yearMonth = `${year}-${month}`;
 
@@ -51,7 +67,6 @@ function ReportsPage() {
       monthMap[yearMonth].transactionCount += 1;
     }
 
-    // Convert to report format
     Object.entries(monthMap)
       .sort((a, b) => b[0].localeCompare(a[0]))
       .forEach(([yearMonth, data]) => {
@@ -72,9 +87,9 @@ function ReportsPage() {
       });
 
     return reports;
-  }, []);
+  }, [transactions]);
 
-  const totalBalance = store.accounts.reduce((sum, account) => sum + account.balance, 0);
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
   const averageIncome = monthlyReports.length > 0 ? monthlyReports.reduce((sum, r) => sum + r.income, 0) / monthlyReports.length : 0;
   const averageExpense = monthlyReports.length > 0 ? monthlyReports.reduce((sum, r) => sum + r.expense, 0) / monthlyReports.length : 0;
@@ -118,6 +133,8 @@ function ReportsPage() {
           <PanelHeading title="Monthly Reports" />
           {loading ? (
             <div className="py-10 text-center text-sm text-muted-foreground">Loading reports…</div>
+          ) : monthlyReports.length === 0 ? (
+            <div className="py-10 text-center text-sm text-muted-foreground">Belum ada transaksi untuk ditampilkan.</div>
           ) : (
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-sm">
@@ -162,4 +179,4 @@ function ReportsPage() {
       </div>
     </DashboardLayout>
   );
-}
+} 
