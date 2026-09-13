@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 import { BalanceHero } from "@/features/dashboard/BalanceHero";
 import { BudgetOverview } from "@/features/dashboard/BudgetOverview";
@@ -10,6 +10,7 @@ import { PaperPanel, PanelHeading } from "@/components/common/PaperPanel";
 import { PeriodFilter } from "@/features/dashboard/PeriodFilter";
 import { RecentTransactions } from "@/features/dashboard/RecentTransactions";
 import { useDashboardRealtime } from "@/hooks/useDashboardRealtime";
+import { supabase } from "@/lib/supabase";
 import { rangeForPreset, type DateRange } from "@/utils/date";
 import type { PeriodPreset } from "@/constants/finance";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
@@ -17,6 +18,15 @@ import { DashboardLayout } from "@/layouts/DashboardLayout";
 const DEFAULT_RANGE: DateRange = rangeForPreset("month");
 
 export const Route = createFileRoute("/")({
+  beforeLoad: async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: Index,
 
   head: () => ({
@@ -32,6 +42,38 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const navigate = useNavigate();
+  const [authChecked, setAuthChecked] = useState(false);
+  const [preset, setPreset] = useState<PeriodPreset>("month");
+  const [customRange, setCustomRange] = useState<DateRange>(DEFAULT_RANGE);
+
+  useEffect(() => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+
+      if (!session) {
+        void navigate({ to: "/login", replace: true });
+        return;
+      }
+
+      setAuthChecked(true);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [navigate]);
+
+  if (!authChecked) {
+    return <DashboardSkeleton />;
+  }
+
+  return <DashboardContent />;
+}
+
+function DashboardContent() {
   const navigate = useNavigate();
   const [preset, setPreset] = useState<PeriodPreset>("month");
   const [customRange, setCustomRange] = useState<DateRange>(DEFAULT_RANGE);
